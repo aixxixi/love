@@ -140,7 +140,97 @@
             transform: scale(0.99);
         }
 
-        /* 模态弹窗 */
+        /* 口令验证弹窗样式 */
+        .token-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 4, 15, 0.92);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .token-card {
+            background: #1a0f24;
+            border: 1px solid var(--accent-rose);
+            border-radius: 20px;
+            padding: 30px 22px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(229, 169, 169, 0.25);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .token-title {
+            color: var(--accent-rose);
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .token-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .token-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(229, 169, 169, 0.4);
+            border-radius: 12px;
+            padding: 14px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 2px;
+            outline: none;
+            margin-bottom: 14px;
+        }
+
+        .token-input:focus {
+            border-color: var(--accent-rose);
+            box-shadow: 0 0 10px rgba(229, 169, 169, 0.3);
+        }
+
+        .submit-token-btn {
+            background: linear-gradient(135deg, #e5a9a9, #9b59b6);
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 15px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3);
+            transition: opacity 0.2s;
+        }
+
+        .submit-token-btn:active {
+            opacity: 0.8;
+        }
+
+        .token-tip {
+            font-size: 12px;
+            color: #ff6b6b;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* 结果弹窗 */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 4, 15, 0.9); backdrop-filter: blur(8px);
@@ -212,6 +302,21 @@
     </style>
 </head>
 <body>
+
+    <!-- 口令验证引导层 -->
+    <div class="token-overlay" id="tokenModal">
+        <div class="token-card">
+            <span class="badge">HR安妮 · 情感私域通道</span>
+            <div class="token-title">请输入测试口令</div>
+            <div class="token-desc">
+                🔒 本测评为加密内容。<br>
+                请先前往微信公众号<b>「HR安妮」</b>，回复关键词<b>「测试」</b>获取 4 位数专属测试口令（2611）。
+            </div>
+            <input type="password" id="tokenInput" class="token-input" placeholder="请输入 4 位数字口令" maxlength="6">
+            <button class="submit-token-btn" onclick="verifyToken()">验证并开始测试</button>
+            <div class="token-tip" id="tokenTip">❌ 口令错误，请检查后重新输入（正确口令：2611）</div>
+        </div>
+    </div>
 
     <div class="container">
         <div class="header">
@@ -306,7 +411,7 @@
                 📌 测试仅停留在表层。想知道你的命局里，到底藏着怎样的**正缘特征**与**情感卡点**？
             </div>
             
-            <!-- 按要求直接展示微信号 -->
+            <!-- 微信号展示 -->
             <div class="wechat-box">
                 <div style="font-size: 12px; color: #b39ebd; margin-bottom: 4px;">添加 HR安妮 个人微信</div>
                 <div class="wechat-id" id="wxId">xx317268</div>
@@ -320,6 +425,28 @@
     </div>
 
     <script>
+        // 口令验证逻辑
+        function verifyToken() {
+            const inputVal = document.getElementById('tokenInput').value.trim();
+            const tipElem = document.getElementById('tokenTip');
+            
+            if (inputVal === '2611') {
+                // 口令正确，隐藏验证弹窗
+                document.getElementById('tokenModal').style.display = 'none';
+                localStorage.setItem('anne_love_verified', 'true');
+            } else {
+                // 口令错误，显示提示
+                tipElem.style.display = 'block';
+            }
+        }
+
+        // 页面加载时检查是否已经验证过
+        window.onload = function() {
+            if (localStorage.getItem('anne_love_verified') === 'true') {
+                document.getElementById('tokenModal').style.display = 'none';
+            }
+        };
+
         let currentQ = 1;
         const totalQ = 6;
         let scores = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
@@ -370,7 +497,6 @@
             scores[category] = (scores[category] || 0) + 1;
             document.getElementById('progress').style.width = '100%';
 
-            // 计算最高得分类型
             let highestType = 'A';
             let maxScore = -1;
             for (let key in scores) {
@@ -380,7 +506,6 @@
                 }
             }
 
-            // 写入结果
             const result = resultData[highestType];
             document.getElementById('resType').innerText = result.type;
             document.getElementById('resDesc').innerText = result.desc;
